@@ -85,5 +85,7 @@
         </SOURCES>
       </library>
     </orderEntry>
+    <orderEntry type="library" name="commons-io-2.11.0" level="project" />
+    <orderEntry type="library" name="monte-screen-recorder-0.7.7.0" level="project" />
   </component>
 </module>

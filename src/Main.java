@@ -8,8 +8,81 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.Keys;
 
+import org.apache.commons.io.FileUtils;
+import org.monte.media.Format;
+import org.monte.media.Registry;
+import org.monte.media.math.Rational;
+import org.monte.screenrecorder.ScreenRecorder;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import static org.monte.media.FormatKeys.*;
+import static org.monte.media.VideoFormatKeys.*;
+
+import java.awt.*;
+import java.io.File;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class Main {
+    private static ScreenRecorder screenRecorder;
+    
+    private static void startRecording() throws Exception {
+        GraphicsConfiguration gc = GraphicsEnvironment
+            .getLocalGraphicsEnvironment()
+            .getDefaultScreenDevice()
+            .getDefaultConfiguration();
+
+        screenRecorder = new ScreenRecorder(gc,
+            new Format(MediaTypeKey, MediaType.FILE, MimeTypeKey, MIME_AVI),
+            new Format(MediaTypeKey, MediaType.VIDEO, EncodingKey, ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE,
+                CompressorNameKey, ENCODING_AVI_TECHSMITH_SCREEN_CAPTURE,
+                DepthKey, 24, FrameRateKey, Rational.valueOf(15),
+                QualityKey, 1.0f,
+                KeyFrameIntervalKey, 15 * 60),
+            new Format(MediaTypeKey, MediaType.VIDEO, EncodingKey, "black",
+                FrameRateKey, Rational.valueOf(30)),
+            null);
+        
+        screenRecorder.start();
+    }
+
+    private static void stopRecording() throws Exception {
+        screenRecorder.stop();
+    }
+
+    private static void takeScreenshot(WebDriver driver, String fileName) {
+        try {
+            // Obtener el directorio del usuario
+            String userDir = System.getProperty("user.home");
+            // Crear directorio de screenshots dentro de la carpeta Documentos
+            File screenshotsDir = new File(userDir + "/Documents/selenium_screenshots");
+            if (!screenshotsDir.exists()) {
+                screenshotsDir.mkdirs();
+            }
+
+            // Tomar screenshot
+            TakesScreenshot scrShot = ((TakesScreenshot) driver);
+            File srcFile = scrShot.getScreenshotAs(OutputType.FILE);
+            
+            // Generar nombre de archivo con timestamp
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            String filePath = screenshotsDir.getAbsolutePath() + File.separator + fileName + "_" + timestamp + ".png";
+            File destFile = new File(filePath);
+            
+            // Copiar archivo
+            Files.copy(srcFile.toPath(), destFile.toPath());
+            System.out.println("📸 Captura de pantalla guardada en: " + filePath);
+        } catch (Exception e) {
+            System.out.println("❌ Error al tomar la captura: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) {
+        // Crear directorio para screenshots si no existe
+        new File("screenshots").mkdirs();
+        
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--disable-notifications");
         options.addArguments("--start-maximized");
@@ -30,8 +103,13 @@ public class Main {
         Actions actions = new Actions(driver);
 
         try {
+            // Iniciar grabación
+            startRecording();
+            
             driver.manage().window().maximize();
             driver.get("https://demoqa.com/automation-practice-form");
+            // Captura inicial
+            takeScreenshot(driver, "inicio");
 
             // Cerrar banner y anuncios si existen
             try {
@@ -65,7 +143,7 @@ public class Main {
             // Información personal
             wait.until(ExpectedConditions.elementToBeClickable(By.id("firstName"))).sendKeys("Juan");
             wait.until(ExpectedConditions.elementToBeClickable(By.id("lastName"))).sendKeys("Pérez");
-            wait.until(ExpectedConditions.elementToBeClickable(By.id("userEmail"))).sendKeys("juan.perez@example.com");
+            takeScreenshot(driver, "nombre_completo");
             
             // Género
             WebElement genderRadio = driver.findElement(By.cssSelector("label[for='gender-radio-1']"));
@@ -177,11 +255,20 @@ public class Main {
                     throw e2;
                 }
             }
+            // Antes de enviar el formulario
+            takeScreenshot(driver, "formulario_completo");
+            
             // Enviar formulario
             WebElement submitButton = driver.findElement(By.id("submit"));
             js.executeScript("arguments[0].click();", submitButton);
+
             // Esperar a que aparezca el modal de confirmación
             wait.until(ExpectedConditions.presenceOfElementLocated(By.className("modal-content")));
+
+            // Esperar modal y tomar captura final
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.className("modal-content")));
+            Thread.sleep(1000); // Pequeña pausa para asegurar que el modal esté visible
+            takeScreenshot(driver, "confirmacion");
 
             // Imprimir mensaje de éxito con formato
             System.out.println("\n" + "=".repeat(50));
@@ -195,6 +282,7 @@ public class Main {
 
             Thread.sleep(3000);
         } catch (Exception e) {
+            takeScreenshot(driver, "error");
             System.out.println("\n" + "=".repeat(50));
             System.out.println("❌ ERROR EN LA PRUEBA");
             System.out.println("📝 Detalles del error:");
@@ -202,7 +290,13 @@ public class Main {
             System.out.println("=".repeat(50) + "\n");
             e.printStackTrace();
         } finally {
+            try {
+                stopRecording();
+            } catch (Exception e) {
+                System.out.println("Error al detener la grabación: " + e.getMessage());
+            }
             driver.quit();
+            System.out.println("🎥 Video de la prueba guardado");
             System.out.println("🔚 Prueba finalizada - Navegador cerrado");
         }
     }
