@@ -18,7 +18,7 @@ public class Main {
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
 
-// Aumentar los tiempos de espera
+        // Aumentar los tiempos de espera
         System.setProperty("webdriver.chrome.driver", "C:\\Users\\ASUS\\Downloads\\chromedriver-win64\\chromedriver.exe");
         WebDriver driver = new ChromeDriver(options);
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
@@ -26,7 +26,7 @@ public class Main {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
         JavascriptExecutor js = (JavascriptExecutor) driver;
 
-// Al inicio del main, después de crear el WebDriver
+
         Actions actions = new Actions(driver);
 
         try {
@@ -67,13 +67,13 @@ public class Main {
             wait.until(ExpectedConditions.elementToBeClickable(By.id("lastName"))).sendKeys("Pérez");
             wait.until(ExpectedConditions.elementToBeClickable(By.id("userEmail"))).sendKeys("juan.perez@example.com");
             
-            // Género - usando JavaScript para el clic
+            // Género
             WebElement genderRadio = driver.findElement(By.cssSelector("label[for='gender-radio-1']"));
             js.executeScript("arguments[0].click();", genderRadio);
             
             wait.until(ExpectedConditions.elementToBeClickable(By.id("userNumber"))).sendKeys("3216549870");
 
-            // Fecha de nacimiento - usando JavaScript
+            // Fecha de nacimiento
             WebElement dateInput = driver.findElement(By.id("dateOfBirthInput"));
             js.executeScript("arguments[0].scrollIntoView(true);", dateInput);
             js.executeScript("arguments[0].click();", dateInput);
@@ -96,7 +96,7 @@ public class Main {
             wait.until(ExpectedConditions.elementToBeClickable(
                 By.cssSelector(".subjects-auto-complete__option"))).click();
 
-            // Hobbies - usando JavaScript
+            // Hobbies
             WebElement hobby = driver.findElement(By.cssSelector("label[for='hobbies-checkbox-1']"));
             js.executeScript("arguments[0].click();", hobby);
 
@@ -108,7 +108,7 @@ public class Main {
             WebElement addressField = wait.until(ExpectedConditions.elementToBeClickable(By.id("currentAddress")));
             addressField.sendKeys("Calle Falsa 123");
 
-            // Estado y Ciudad - específico para React-Select
+            // Estado y Ciudad
             try {
                 // Scroll hacia el área de Estado/Ciudad
                 WebElement stateContainer = driver.findElement(By.id("stateCity-wrapper"));
